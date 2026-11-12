@@ -5,7 +5,7 @@
       "namespace": "android_app",
       "package_name": "com.nithamorukural.habitapp",
       "sha256_cert_fingerprints": [
-        "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+        "REPLACE_WITH_GOOGLE_PLAY_APP_SIGNING_CERTIFICATE_SHA256"
       ]
     }
   }

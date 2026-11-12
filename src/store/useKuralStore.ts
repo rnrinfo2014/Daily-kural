@@ -9,6 +9,10 @@ import {
   TOPICS,
 } from '../data/kurals';
 
+import { currentStreak, getEffectiveCycleDate, parseSchedule } from '../lib/habit';
+import { isNative, requestReminderPermission, syncNativeReminder } from '../lib/reminders';
+export { getEffectiveCycleDate } from '../lib/habit';
+
 const STORAGE_KEY = 'nitham_oru_kural_v2_habit_state';
 
 export interface UserPreferencesState {
@@ -52,28 +56,6 @@ const DEFAULT_STATE: UserPreferencesState = {
   advancedMode: false,
 };
 
-export function getEffectiveCycleDate(
-  scheduleTime: string,
-  now = new Date()
-): string {
-  const [hoursStr, minutesStr] = (scheduleTime || '07:00').split(':');
-  const schedHour = Number(hoursStr) || 7;
-  const schedMin = Number(minutesStr) || 0;
-
-  const cycleDate = new Date(now);
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const targetMinutes = schedHour * 60 + schedMin;
-
-  if (currentMinutes < targetMinutes) {
-    cycleDate.setDate(cycleDate.getDate() - 1);
-  }
-
-  const year = cycleDate.getFullYear();
-  const month = String(cycleDate.getMonth() + 1).padStart(2, '0');
-  const day = String(cycleDate.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 export function computeDailyKural(
   cycleDateStr: string,
   selectedTopics: TopicId[]
@@ -106,26 +88,23 @@ function loadInitialState(): UserPreferencesState {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw) as Partial<UserPreferencesState>;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return DEFAULT_STATE;
+    const numbers = (value: unknown, fallback: number[]) => Array.isArray(value) ? [...new Set(value.filter((n) => Number.isInteger(n) && n >= 1 && n <= 1330))] : fallback;
+    const topics = Array.isArray(parsed.selectedTopics) ? parsed.selectedTopics.filter((id) => TOPICS.some((topic) => topic.id === id)) : [];
     return {
       ...DEFAULT_STATE,
       ...parsed,
-      selectedTopics:
-        Array.isArray(parsed.selectedTopics) && parsed.selectedTopics.length > 0
-          ? parsed.selectedTopics
-          : DEFAULT_TOPICS,
-      favoriteNumbers: Array.isArray(parsed.favoriteNumbers)
-        ? parsed.favoriteNumbers
-        : DEFAULT_STATE.favoriteNumbers,
-      completedNumbers: Array.isArray(parsed.completedNumbers)
-        ? parsed.completedNumbers
-        : [],
-      completedDates: Array.isArray(parsed.completedDates)
-        ? parsed.completedDates
-        : [],
-      personalNotes:
-        parsed.personalNotes && typeof parsed.personalNotes === 'object'
-          ? parsed.personalNotes
-          : {},
+      language: (parsed.language === 'tamil' || parsed.language === 'tanglish' || parsed.language === 'english') ? parsed.language : 'tamil',
+      selectedTopics: topics.length ? topics : DEFAULT_TOPICS,
+      scheduleTime: typeof parsed.scheduleTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(parsed.scheduleTime) ? parsed.scheduleTime : '07:00',
+      reminderEnabled: typeof parsed.reminderEnabled === 'boolean' ? parsed.reminderEnabled : true,
+      onboardingCompleted: parsed.onboardingCompleted === true,
+      favoriteNumbers: numbers(parsed.favoriteNumbers, DEFAULT_STATE.favoriteNumbers),
+      completedNumbers: numbers(parsed.completedNumbers, []),
+      completedDates: Array.isArray(parsed.completedDates) ? [...new Set(parsed.completedDates.filter((date) => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)))] : [],
+      personalNotes: parsed.personalNotes && typeof parsed.personalNotes === 'object'
+        ? Object.fromEntries(Object.entries(parsed.personalNotes).filter(([key, value]) => Number(key) >= 1 && Number(key) <= 1330 && typeof value === 'string')) : {},
+      customDailyKuralNumber: typeof parsed.customDailyKuralNumber === 'number' && Number.isInteger(parsed.customDailyKuralNumber) && parsed.customDailyKuralNumber >= 1 && parsed.customDailyKuralNumber <= 1330 ? parsed.customDailyKuralNumber : null,
       advancedMode: Boolean(parsed.advancedMode),
     };
   } catch {
@@ -135,25 +114,33 @@ function loadInitialState(): UserPreferencesState {
 
 export function useKuralStore() {
   const [state, setState] = useState<UserPreferencesState>(loadInitialState);
+  const [now, setNow] = useState(() => new Date());
+  const [reminderError, setReminderError] = useState('');
+  const [storageError, setStorageError] = useState('');
+  useEffect(() => {
+    const refresh = () => setNow(new Date());
+    const timer = window.setInterval(refresh, 10000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
   const [scheduledPopupOpen, setScheduledPopupOpen] = useState(false);
 
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setStorageError('');
     } catch {
-      // Ignore storage quota issues
+      setStorageError('Device storage is unavailable. Changes may be lost when you close the app.');
     }
   }, [state]);
 
-  const effectiveCycleDate = useMemo(
-    () => getEffectiveCycleDate(state.scheduleTime),
-    [state.scheduleTime]
-  );
-
-  const todayDateStr = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  }, []);
+  const effectiveCycleDate = getEffectiveCycleDate(state.scheduleTime, now);
+  const todayDateStr = effectiveCycleDate;
 
   const dailyKural = useMemo(() => {
     if (
@@ -172,19 +159,19 @@ export function useKuralStore() {
 
   const isTodayHabitCompleted = useMemo(
     () =>
-      state.completedDates.includes(todayDateStr) ||
-      state.completedNumbers.includes(dailyKural.number),
-    [state.completedDates, todayDateStr, state.completedNumbers, dailyKural.number]
+      state.completedDates.includes(todayDateStr),
+    [state.completedDates, todayDateStr]
   );
 
   const habitStreakCount = useMemo(
-    () => Math.max(state.completedDates.length, state.completedNumbers.length),
-    [state.completedDates.length, state.completedNumbers.length]
+    () => currentStreak(state.completedDates, todayDateStr),
+    [state.completedDates, todayDateStr]
   );
 
   const fireSystemNotification = useCallback((kural: KuralItem) => {
     if (
       typeof window !== 'undefined' &&
+      !isNative &&
       'Notification' in window &&
       Notification.permission === 'granted'
     ) {
@@ -209,14 +196,13 @@ export function useKuralStore() {
 
       if (state.lastNotifiedDate === currentDayStr) return;
 
-      const [schedH, schedM] = state.scheduleTime.split(':').map(Number);
+      const [schedH, schedM] = parseSchedule(state.scheduleTime);
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const scheduledMinutes = (schedH || 7) * 60 + (schedM || 0);
+      const scheduledMinutes = schedH * 60 + schedM;
 
-      // When the scheduled time arrives (within 60 min window) and today's Kural isn't read yet
+      // Show the reminder when opened at or after the scheduled time.
       if (
         currentMinutes >= scheduledMinutes &&
-        currentMinutes <= scheduledMinutes + 60 &&
         !isTodayHabitCompleted
       ) {
         setScheduledPopupOpen(true);
@@ -279,20 +265,19 @@ export function useKuralStore() {
     }));
   }, []);
 
+  useEffect(() => {
+    syncNativeReminder(state.reminderEnabled && state.onboardingCompleted, state.scheduleTime)
+      .catch(() => setReminderError('Could not schedule reminder. Check notification permissions in Android Settings.'));
+  }, [state.reminderEnabled, state.onboardingCompleted, state.scheduleTime]);
+
   const setReminderEnabled = useCallback(async (enabled: boolean) => {
-    if (
-      enabled &&
-      typeof window !== 'undefined' &&
-      'Notification' in window &&
-      Notification.permission === 'default'
-    ) {
-      try {
-        await Notification.requestPermission();
-      } catch {
-        // Ignore if blocked in iframe
-      }
+    try {
+      const granted = !enabled || await requestReminderPermission();
+      setReminderError(granted ? '' : 'Notifications are blocked. Enable permission in device settings. In-app reminders still work while open.');
+      setState((prev) => ({ ...prev, reminderEnabled: enabled && granted }));
+    } catch {
+      setReminderError('Notification permission could not be requested. Please check device settings.');
     }
-    setState((prev) => ({ ...prev, reminderEnabled: enabled }));
   }, []);
 
   const toggleFavorite = useCallback((kuralNumber: number) => {
@@ -354,7 +339,8 @@ export function useKuralStore() {
 
   const setTodayKuralByNumber = useCallback(
     (kuralNumber: number) => {
-      const clamped = Math.max(1, Math.min(1330, kuralNumber));
+      if (!Number.isFinite(kuralNumber)) return;
+      const clamped = Math.max(1, Math.min(1330, Math.trunc(kuralNumber)));
       setState((prev) => ({
         ...prev,
         customDailyKuralNumber: clamped,
@@ -383,9 +369,10 @@ export function useKuralStore() {
     }));
   }, []);
 
-  const completeOnboarding = useCallback(() => {
+  const completeOnboarding = useCallback(async () => {
+    if (state.reminderEnabled) await setReminderEnabled(true);
     setState((prev) => ({ ...prev, onboardingCompleted: true }));
-  }, []);
+  }, [state.reminderEnabled, setReminderEnabled]);
 
   const triggerScheduledPopupNow = useCallback(() => {
     setScheduledPopupOpen(true);
@@ -406,6 +393,8 @@ export function useKuralStore() {
     selectedTopics: state.selectedTopics,
     scheduleTime: state.scheduleTime,
     reminderEnabled: state.reminderEnabled,
+    reminderError,
+    storageError,
     favoriteNumbers: state.favoriteNumbers,
     favoriteKurals,
     completedNumbers: state.completedNumbers,

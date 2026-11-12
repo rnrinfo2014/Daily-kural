@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Nitham Oru Kural</string>
+    <string name="title_activity_main">Nitham Oru Kural</string>
+    <string name="package_name">com.nithamorukural.habitapp</string>
+    <string name="custom_url_scheme">com.nithamorukural.habitapp</string>
+</resources>

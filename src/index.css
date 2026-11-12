@@ -18,3 +18,14 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Keep controls clear of Android edge-to-edge system bars. */
+body { padding-top: env(safe-area-inset-top); }
+nav[aria-label="Mobile navigation"] {
+  padding-bottom: env(safe-area-inset-bottom);
+  height: calc(4rem + env(safe-area-inset-bottom));
+}
+header.sticky { top: env(safe-area-inset-top); }
+@media (max-width: 767px) {
+  #root > .min-h-screen { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+}
