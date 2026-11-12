@@ -1,3 +1,4 @@
+import { isNative } from '../lib/reminders';
 import React, { useEffect, useState } from 'react';
 import { Download, Smartphone, X } from 'lucide-react';
 
@@ -69,7 +70,7 @@ export const PWAInstallButton: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showGuide, setShowGuide] = useState(false);
 
-  if (isInstalled) {
+  if (isInstalled || isNative) {
     return null;
   }
 
@@ -132,9 +133,7 @@ export const PWAInstallButton: React.FC = () => {
                 <p>
                   2. Tap the browser menu (<strong>⋮</strong>) and select <strong>Install App / Add to Home screen</strong>.
                 </p>
-                <p className="text-xs text-slate-500 pt-1">
-                  For Google Play Store APK / AAB packaging, open the <strong>Settings & Play Store</strong> tab inside the app.
-                </p>
+
               </div>
             )}
 

@@ -141,6 +141,8 @@ export default function App() {
     selectedTopics,
     scheduleTime,
     reminderEnabled,
+    reminderError,
+    storageError,
     favoriteNumbers,
     favoriteKurals,
     completedNumbers,
@@ -174,6 +176,7 @@ export default function App() {
   const [appFocusFilter, setAppFocusFilter] = useState<'both' | 'life' | 'business'>('both');
   const [jumpInput, setJumpInput] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [voiceMessage, setVoiceMessage] = useState('');
 
   // Explore tab filters (Only visible in Advance Mode)
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -196,7 +199,10 @@ export default function App() {
 
   // Offline Text-to-Speech
   const handleSpeakKural = (kural: KuralItem) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setVoiceMessage('Voice reading is unavailable on this device.');
+      return;
+    }
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -209,7 +215,14 @@ export default function App() {
         ? `Thirukkural number ${kural.number}. ${kural.englishCouplet}. ${kural.content.english.explanation}`
         : `${kural.line1}. ${kural.line2}. தெளிவுரை: ${kural.content.tamil.explanation}`;
 
+    const voice = window.speechSynthesis.getVoices().find((voice) => voice.localService && voice.lang.startsWith(language === 'english' ? 'en' : 'ta'));
+    if (!voice) {
+      setVoiceMessage('No offline voice is available for this language. Install a local voice pack in device settings.');
+      return;
+    }
+    setVoiceMessage('');
     const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.voice = voice;
     utterance.lang = language === 'english' ? 'en-IN' : 'ta-IN';
     utterance.rate = 0.92;
     utterance.onend = () => setIsSpeaking(false);
@@ -257,6 +270,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 pb-20 md:pb-12">
+      {voiceMessage && <p role="status" className="p-3 bg-slate-100 text-slate-800">{voiceMessage}</p>}
+      {storageError && <p role="alert" className="p-3 bg-amber-50 text-amber-900">{storageError}</p>}
       {/* Top Bar Contract: 3 Zones (Brand Wordmark — Single-Line Nav Links — 1 Primary Action) */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-8 px-4 sm:px-8 py-3.5 bg-white/95 backdrop-blur-md border-b border-slate-200/80">
         {/* Zone 1: Single text element wordmark */}
@@ -357,7 +372,7 @@ export default function App() {
             <div className="flex items-center gap-1.5 text-slate-700 font-semibold tabular-nums">
               <Flame className="w-4 h-4 text-emerald-600" />
               <span>
-                {habitStreakCount} {language === 'tamil' ? 'நாள் பழக்கம்' : 'Completed'}
+                {habitStreakCount} {language === 'tamil' ? 'நாள் தொடர்' : 'day streak'}
               </span>
               <span className="text-slate-300" aria-hidden="true">
                 ·
@@ -1025,8 +1040,8 @@ export default function App() {
                     </h2>
                     <p className="text-xs text-slate-600">
                       {language === 'tamil'
-                        ? 'இந்த நேரத்தில் ஆப்-லிருந்து தினசரி குறள் நோட்டிபிகேஷன் பாப்-அப் தானாகத் தோன்றும்.'
-                        : 'At this exact time, your daily Kural notification popup will trigger automatically.'}
+                        ? 'Android-ல் தினசரி நினைவூட்டல் வரும். உலாவியில் ஆப் திறந்திருக்கும் போது மட்டும் நினைவூட்டல் வரும்.'
+                        : 'Android reminders work in the background. Browser reminders require the app to be open. Battery settings may delay delivery.'}
                     </p>
                   </div>
 
@@ -1067,7 +1082,7 @@ export default function App() {
                         Auto Notification Popup
                       </div>
                       <div className="text-xs text-slate-500">
-                        Pops up daily at {scheduleTime} until marked Complete
+                        Daily reminder around {scheduleTime}
                       </div>
                     </div>
                     <button
@@ -1083,6 +1098,7 @@ export default function App() {
                     </button>
                   </div>
 
+                  {reminderError && <p role="status" className="text-sm text-amber-800">{reminderError}</p>}
                   <button
                     type="button"
                     onClick={triggerScheduledPopupNow}
@@ -1185,69 +1201,11 @@ export default function App() {
               </section>
             </div>
 
-            {/* Play Store APK / AAB Packaging & Privacy Policy Section */}
-            <section className="rounded-2xl bg-white border border-slate-200 p-6 space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
-                    <Smartphone className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900">
-                      Google Play Store APK / AAB & Privacy Policy Ready
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      100% Offline PWA Service Worker · Digital Asset Links · Privacy Policy Included
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setPrivacyModalOpen(true)}
-                    className="min-h-[40px] px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>View Privacy Policy</span>
-                  </button>
-                  <a
-                    href="/privacy-policy.html"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="min-h-[40px] px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold flex items-center gap-1.5"
-                  >
-                    <span>Play Console Privacy URL</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600">
-                <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-4 space-y-2">
-                  <div className="font-bold text-slate-900 text-sm">
-                    Method 1: Convert PWA to Play Store APK / AAB (5 Mins)
-                  </div>
-                  <p>
-                    1. Go to <strong>PWABuilder.com</strong> and paste your deployed App URL, or run Google’s official CLI:{' '}
-                    <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-900">
-                      npx @bubblewrap/cli init --manifest=/manifest.webmanifest
-                    </code>
-                  </p>
-                  <p>
-                    2. It generates your signed <code>.apk</code> (for direct phone testing) and <code>.aab</code> (Android App Bundle for Google Play Console).
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-4 space-y-2">
-                  <div className="font-bold text-slate-900 text-sm">
-                    Method 2: Native Offline Android APK via Capacitor
-                  </div>
-                  <p>
-                    Because all 1,330 Kurals are bundled inside <code>src/data/thirukkural1330.json</code> with zero server dependencies, you can also package <code>dist/</code> directly into a standalone native Android APK using Capacitor (<code>npx cap add android</code>).
-                  </p>
-                </div>
-              </div>
+            <section className="rounded-2xl bg-white border border-slate-200 p-6 space-y-4">
+              <h3 className="font-bold">Privacy & Offline Reading</h3>
+              <p className="text-sm text-slate-600">All 1,330 Kurals are stored on your device. Favorites and notes stay on this device. Uninstalling or clearing app data removes your saved data. Sharing sends only the text or image you choose to your selected app.</p>
+              <p className="text-sm text-slate-600">Practical examples are topic-based reflection prompts. Voice reading depends on the voices installed on your device.</p>
+              <button type="button" onClick={() => setPrivacyModalOpen(true)} className="min-h-[44px] px-4 rounded-xl bg-emerald-50 text-emerald-900 font-semibold">View Privacy Policy</button>
             </section>
           </div>
         )}

@@ -1,3 +1,6 @@
+import { Share } from '@capacitor/share';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { isNative } from '../lib/reminders';
 import React, { useState } from 'react';
 import { KuralItem, LanguageMode, TOPICS } from '../data/kurals';
 import { X, Copy, Check, Share2, Download, MessageCircle } from 'lucide-react';
@@ -17,6 +20,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [includeExample, setIncludeExample] = useState(true);
   const [includeLife, setIncludeLife] = useState(true);
   const [includeBusiness, setIncludeBusiness] = useState(true);
+  const [shareError, setShareError] = useState('');
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -102,6 +106,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   const handleNativeShare = async () => {
+    if (isNative) {
+      try { await Share.share({ title: `Thirukkural #${kural.number}`, text: shareText }); }
+      catch { /* Dismissing the Android share sheet is harmless. */ }
+      return;
+    }
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
@@ -125,12 +134,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     link.click();
   };
 
-  const handleDownloadPoster = () => {
+  const handleDownloadPoster = async () => {
     setDownloading(true);
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 1080;
-      canvas.height = 1350;
+      canvas.height = 5000;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -148,7 +157,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       ctx.fillText(
         `திருக்குறள் #${kural.number}  ·  ${kural.adhigaram[shareLang]}`,
         96,
-        125
+        125, canvas.width - 192
       );
 
       // Divider
@@ -158,8 +167,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       // Tamil Couplet
       ctx.fillStyle = '#F8FAFC';
       ctx.font = '700 40px sans-serif';
-      ctx.fillText(kural.line1, 96, 235);
-      ctx.fillText(kural.line2, 96, 295);
+      ctx.fillText(kural.line1, 96, 235, canvas.width - 192);
+      ctx.fillText(kural.line2, 96, 295, canvas.width - 192);
 
       const drawWrappedText = (
         text: string,
@@ -256,23 +265,37 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         '#CBD5E1'
       );
 
-      ctx.fillStyle = '#064E3B';
-      ctx.fillRect(96, 1120, canvas.width - 192, 130);
-      drawWrappedText(
-        `இன்றைய செயல்: ${content.actionableTakeaway}`,
-        124,
-        1168,
-        canvas.width - 248,
-        36,
-        '600 24px sans-serif',
-        '#A7F3D0'
+      cursorY += 32;
+      const actionStart = cursorY;
+      // Render text first to measure the card before cropping its background.
+      const actionEnd = drawWrappedText(
+        `${shareLang === 'tamil' ? 'இன்றைய செயல்' : 'Daily action'}: ${content.actionableTakeaway}`,
+        124, actionStart + 48, canvas.width - 248, 36, '600 24px sans-serif', '#A7F3D0'
       );
-
-      const dataUrl = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `daily-kural-${kural.number}.png`;
-      a.click();
+      ctx.fillStyle = '#064E3B';
+      ctx.fillRect(96, actionStart, canvas.width - 192, actionEnd - actionStart + 24);
+      drawWrappedText(
+        `${shareLang === 'tamil' ? 'இன்றைய செயல்' : 'Daily action'}: ${content.actionableTakeaway}`,
+        124, actionStart + 48, canvas.width - 248, 36, '600 24px sans-serif', '#A7F3D0'
+      );
+      const output = document.createElement('canvas');
+      output.width = canvas.width;
+      output.height = Math.min(canvas.height, actionEnd + 96);
+      output.getContext('2d')!.drawImage(canvas, 0, 0);
+      const dataUrl = output.toDataURL('image/png');
+      if (isNative) {
+        const file = await Filesystem.writeFile({
+          path: `daily-kural-${kural.number}.png`, data: dataUrl.split(',')[1], directory: Directory.Cache,
+        });
+        await Share.share({ title: `Thirukkural #${kural.number}`, files: [file.uri] });
+      } else {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `daily-kural-${kural.number}.png`;
+        a.click();
+      }
+    } catch {
+      setShareError('Image sharing did not finish. You can try again or share the text.');
     } finally {
       setDownloading(false);
     }
@@ -285,6 +308,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       aria-modal="true"
     >
       <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-white border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+        {shareError && <p role="status" className="p-3 text-sm text-amber-800">{shareError}</p>}
         <div className="w-10 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 sm:hidden" />
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">

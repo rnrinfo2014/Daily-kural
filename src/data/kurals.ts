@@ -1,3 +1,4 @@
+import { toTanglish } from '../lib/tanglish';
 import rawKuralsData from './thirukkural1330.json';
 import rawChaptersData from './chapters133.json';
 
@@ -1073,7 +1074,7 @@ function buildKuralItem(raw: RawKuralRecord): KuralItem {
         actionableTakeaway: pb.takeaways.tamil[takeIdx],
       },
       tanglish: {
-        explanation: `[${ch.nameTanglish} - ${ch.nameEnglish}] ${tamilExplanation} (Simple Meaning: ${raw.ex})`,
+        explanation: `[${ch.nameTanglish} - ${ch.nameEnglish}] ${toTanglish(tamilExplanation)} (English meaning: ${raw.ex})`,
         scholarNote: `Phonetic Reading: ${raw.tl}`,
         realWorldExample: `${pb.realWorldExamples.tanglish[idx]}`,
         lifeApplication: `${pb.lifeApplications.tanglish[idx]}`,
