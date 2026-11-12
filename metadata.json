@@ -1,0 +1,6 @@
+{
+  "name": "Gemini Carbon & Model Intelligence Suite",
+  "description": "100% Offline Daily Thirukkural Habit App with Simple Tamil, Tanglish, and English explanations, real-world examples, and life/business applications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
