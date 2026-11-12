@@ -48,3 +48,7 @@ First Android release with offline Thirukkural reading, language options, favori
 - Content rating and target age group: owner must answer the questionnaire based on the actual app and intended audience; no rating has been assigned here.
 - Verify rights and attribution for bundled modern translations/commentaries before submitting. The repository did not include a dataset source/license statement.
 - Follow any testing/production-access requirements shown for this developer account. Internal testing is recommended before a production submission.
+
+## Version 1.1.0 release notes
+
+New native Android interface built with Kotlin and Jetpack Compose. Improved small-screen and large-font layouts, native navigation and time picker, offline reading/search, saved notes and favorites, and optional Android reminders. Update over the earlier test build to import existing local reading data.

@@ -1,3 +1,5 @@
+> Android 1.1.0 now uses Kotlin + Jetpack Compose. Follow [NATIVE_ANDROID.md](NATIVE_ANDROID.md) for current native build/update instructions. The 1.0.0 Capacitor details below are historical.
+
 # Android release — Nitham Oru Kural
 
 App ID: `com.nithamorukural.habitapp` · version 1.0.0 · version code 1 · target SDK 36 · minimum SDK 24.

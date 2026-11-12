@@ -34,7 +34,7 @@ jobs:
       - uses: android-actions/setup-android@v3
       - run: npm ci
       - run: npm run android:sync
-      - run: ./gradlew assembleDebug lintRelease --console=plain
+      - run: ./gradlew assembleDebug testDebugUnitTest lintRelease --console=plain
         working-directory: android
       - uses: actions/upload-artifact@v4
         with:

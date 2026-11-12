@@ -6,3 +6,5 @@
 - `privacy-policy-preview.png`: full-page proof of the standalone policy; not a store screenshot.
 
 `node release/capture-assets.mjs` regenerates the previews against the local production preview server.
+
+Android 1.1.0 now has a Kotlin/Compose UI. The three web screenshots in this folder are historical; use `release/native-previews/` to review the current UI and take fresh phone screenshots before store submission.
