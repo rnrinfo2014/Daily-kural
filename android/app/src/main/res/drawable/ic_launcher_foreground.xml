@@ -1,7 +1,4 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="512" android:viewportHeight="512">
-<path android:fillColor="#1E293B" android:strokeColor="#334155" android:strokeWidth="8" android:pathData="M128,136H384Q416,136 416,168V344Q416,376 384,376H128Q96,376 96,344V168Q96,136 128,136Z"/>
-<path android:fillColor="#10B981" android:pathData="M147,196H365Q376,196 376,207Q376,218 365,218H147Q136,218 136,207Q136,196 147,196Z"/>
-<path android:fillColor="#F8FAFC" android:pathData="M147,246H313Q324,246 324,257Q324,268 313,268H147Q136,268 136,257Q136,246 147,246Z"/>
-<path android:fillColor="#10B981" android:pathData="M388,316A24,24 0,1 1,340 316A24,24 0,1 1,388 316"/>
-<path android:fillColor="#00000000" android:strokeColor="#0F172A" android:strokeWidth="6" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M353,316l8,8l16,-16"/>
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:inset="12dp">
+    <bitmap android:src="@drawable/smartiva_logo" android:gravity="fill" android:filter="true" />
+</inset>
