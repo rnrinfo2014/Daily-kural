@@ -6,3 +6,12 @@ coverage/
 *.log
 .env*
 !.env.example
+
+*.jks
+*.keystore
+keystore.properties
+playwright-report/
+test-results/
+release/*.apk
+release/*.aab
+release/*.zip

@@ -1,0 +1,8 @@
+import { chromium } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+const logo='data:image/png;base64,'+(await readFile(new URL('../branding/smartiva-app-icon-512.png', import.meta.url))).toString('base64');
+const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
+const page=await browser.newPage({viewport:{width:1024,height:500},deviceScaleFactor:1});
+await page.setContent(`<html lang="ta"><head><meta charset="utf-8"><style>*{box-sizing:border-box}body{margin:0;width:1024px;height:500px;background:#0f172a;color:#f8fafc;font-family:system-ui,'Noto Sans Tamil',sans-serif;display:flex;align-items:center;padding:64px;gap:44px}.icon{width:210px;height:210px;flex-shrink:0;border-radius:38px;background:white;overflow:hidden;display:flex;align-items:center;justify-content:center}.icon img{width:100%;height:100%;object-fit:contain}.text{flex:1;min-width:0}.brand{font-size:17px;letter-spacing:3px;font-weight:700;color:#67d3f1;margin-bottom:20px}h1{font-size:37px;line-height:1.5;margin:0 0 16px;font-weight:750}.tag{font-size:20px;line-height:1.9;color:#cbd5e1}.meta{font-size:18px;line-height:1.7;color:#8dd9ee;margin-top:16px}</style></head><body><div class="icon"><img src="${logo}" alt="Smartiva logo"></div><div class="text"><div class="brand">SMARTIVA</div><h1>நித்தம் ஒரு குறள்</h1><div class="tag">ஒரு குறள். ஒரு சிந்தனை.<br>ஒரு சிறு செயல்.</div><div class="meta">1,330 குறள்கள் · இணையம் இன்றி</div></div></body></html>`);
+await page.screenshot({path:new URL('./store-assets/feature-graphic-1024x500.png', import.meta.url).pathname});
+await browser.close();

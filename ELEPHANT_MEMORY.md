@@ -1,3 +1,7 @@
+> Android 1.1.0: the current Android UI is Kotlin + Jetpack Compose. Current build and migration instructions are in `release/NATIVE_ANDROID.md`. Earlier Capacitor/PWA roadmap entries below describe the original implementation.
+
+> Release status (12 November 2026): the original roadmap below records earlier intentions, not verified Play Store readiness. Current build and publication instructions are in `release/RELEASE.md`. Android packaging now uses Capacitor with native inexact local reminders; the unused Asset Links template is in `release/templates/`. Source attribution/redistribution rights for modern dataset commentaries still require owner verification.
+
 # ELEPHANT MEMORY — Master Architecture & Invariants
 
 ## 1. Project Identity

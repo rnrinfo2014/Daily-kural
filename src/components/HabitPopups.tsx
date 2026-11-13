@@ -399,7 +399,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                Privacy Policy (Google Play Store Compliant)
+                Privacy Policy
               </h3>
               <p className="text-xs text-slate-500">
                 100% Offline · Zero Personal Data Collected · COPPA Safe
@@ -426,8 +426,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
             >
               /privacy-policy.html <ExternalLink className="w-3 h-3" />
             </a>{' '}
-            ready to paste directly into Google Play Console &rarr; App Content
-            &rarr; Privacy Policy.
+            contains the full privacy policy. Sharing sends content only to the app you choose.
           </div>
 
           <h4 className="font-bold text-slate-900">
@@ -457,6 +456,8 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
             All 1,330 Thirukkural verses and explanations are pre-bundled
             locally inside the application. There are no background AI API
             calls, no advertising SDKs, and no third-party tracking scripts.
+            Optional sharing sends your selected Kural to the app you choose.
+            For privacy questions, contact info@smartiva.in.
           </p>
         </div>
 
