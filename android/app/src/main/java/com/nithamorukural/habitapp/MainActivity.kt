@@ -439,7 +439,7 @@ private fun SettingsScreen(data:Library,prefs:Preferences,vm:KuralViewModel,onPr
                 Text(label(prefs.language,"நடைமுறை உதாரணங்கள் தலைப்பு சார்ந்த சிந்தனை வழிகாட்டிகள்.","Practical examples are topic-based reflection prompts."),style=MaterialTheme.typography.bodySmall)
                 OutlinedButton(onClick=onPrivacy,modifier=Modifier.fillMaxWidth()) { Text(label(prefs.language,"தனியுரிமைக் கொள்கை","Privacy policy")) }
                 TextButton(onClick={ runCatching { context.startActivity(Intent(Intent.ACTION_SENDTO,Uri.parse("mailto:info@smartiva.in"))) }.onFailure { onMessage("Contact info@smartiva.in") } }) { Text("info@smartiva.in") }
-                Text("Nitham Oru Kural · ${BuildConfig.VERSION_NAME}\nKotlin · Native Android · Smartiva",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Nitham Oru Kural · ${BuildConfig.VERSION_NAME}\nDeveloped by Smartiva\nDeveloper: Nagaraj",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } }
     }
